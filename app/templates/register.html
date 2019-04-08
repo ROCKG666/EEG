@@ -1,0 +1,35 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>Title</title>
+    <!--<script  src="../static/js/common.js"></script>-->
+    <script  src="../static/js/jquery-1.11.3.js"></script>
+</head>
+<body>
+    <p>欢迎页面</p>
+        <p id="show_name"></p>
+        <p id="show_email"></p>
+        <p><button id="btn">发送ajax</button></p>
+    <script type="text/javascript">
+        var username = window.prompt("请输入用户名")
+        $(function(){
+            console.log("1")
+            $("#btn").click(function(){
+                console.log("2")
+                $.ajax({
+                    url:"http://127.0.0.1:5000/register/?name=" + username,
+                    type:"get",
+                    dataType:"jsonp",
+                    success:function(data){
+                        console.log(data)
+                        var html = "";
+                        html += "<h2>用户名："+data + "</h2>";
+                        $("show_name").html(html);
+                    }
+                })
+            })
+        })
+    </script>
+</body>
+</html>
