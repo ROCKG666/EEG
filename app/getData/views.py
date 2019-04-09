@@ -158,6 +158,7 @@ def get_waves():
             "test_time": wave.test_time,
             "user_id": user.id,
             "nickName": nickName,
+            "photo": user.photo,
             "course_id": course_id,
             "course_name": course.name,
             "course_category": course.category,
@@ -187,6 +188,7 @@ def get_waves():
                 "test_time": wave.test_time,
                 "user_id": user.id,
                 "nickName": nickName,
+                "photo": user.photo,
                 "course_id": course_id,
                 "course_name": course.name,
                 "course_category": course.category,
@@ -218,6 +220,7 @@ def get_waves():
                 "test_time": wave.test_time,
                 "user_id": user_id,
                 "nickName": user.nickName,
+                "photo": user.photo,
                 "course_id": course_id,
                 "course_name": course.name,
                 "course_category": course.category,
@@ -241,6 +244,7 @@ def get_waves():
                 "test_time": wave.test_time,
                 "user_id": wave.user_id,
                 "nickName": user.nickName,
+                "photo": user.photo,
                 "course_id": course_id,
                 "course_name": course.name,
                 "course_category": course.category,
@@ -248,10 +252,10 @@ def get_waves():
             }
             current_app.logger.info("get all waves ok, data-->%s" % data_list)
             data_list.append(wave_info)
+    # return jsonify(data_list)
     return jsonify(data_list)
 
 
-# 获取学生/教师/机构的信息，参数中声明用户类型-->废弃接口
 @getData.route("/get_user_info")
 def get_user_info():
     """获取用户信息，get请求中参数携带nickName + user_type
@@ -344,6 +348,7 @@ def get_courses():
             "name": course.name,
             "avg_data": course.avg_data,
             "category": course.category,
+            "content_url": course.content_url,
             "teacher": teacher.name,
             "teacher_id": teacher_id,
         }

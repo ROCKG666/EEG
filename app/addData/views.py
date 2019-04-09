@@ -98,7 +98,7 @@ def make_comments():
         current_app.logger.error(msg)
         return utils.make_resp(msg=json.dumps(msg), status=201)
 
-    current = datetime.datetime.now().strftime("%Y-%m-%d %H:%M:%S")
+    current = datetime.datetime.now().strftime("%Y-%m-%d  %H:%M:%S")
     comment_info = {
         "user_id": user.id,
         "course_id": course_id,
@@ -120,78 +120,7 @@ def make_comments():
     return jsonify(comment_info)
 
 
-# 存储脑电数据
-@addData.route("/save_waves_old/", methods=["POST"])
-def save_waves():
-    """存储脑电数据接口，post请求中携带的data为：
-    nickName:微信名用户名。代表学生
-    course_id：脑电数据的课程名
-    data：脑电数据
-    url: http://www.xiaochengxueeg.xyz:8888/save_waves
-    :return 所增加脑电数据的详细信息
-    """
-    nickName = request.values.get("nickName")
-    course_id = request.values.get("course_id")
-    data = request.values.get("data")
-
-    try:
-        # 根据nickName和username定位学生
-        user = db.session.query(Users).filter_by(nickName=nickName).first()
-        course = db.session.query(Courses).filter_by(id=course_id).first()
-    except Exception as e:
-        msg = "获取用户%s / 课程%s 信息失败，error:%s" % (nickName, course_id, str(e))
-        current_app.logger.info(msg)
-        return utils.make_resp(msg=json.dumps(msg), status=500)
-
-    if not user:
-        msg = "%s用户不存在, 无法添加脑电数据，请核对" % nickName
-        current_app.logger.error(msg)
-        return utils.make_resp(msg=json.dumps(msg), status=201)
-    if not course:
-        msg = "%s课程不存在, 无法添加脑电数据，请核对" % course_id
-        current_app.logger.error(msg)
-        return utils.make_resp(msg=json.dumps(msg), status=201)
-
-    current = datetime.datetime.now().strftime("%Y-%m-%d %H:%M:%S")
-
-    wave_info = {
-        "nickName": nickName,
-        "username": user.username,
-        "user_id": user.id,
-        "course_id": course_id,
-        "course_name": course.name,
-        "course_category": course.category,
-        "wave_data": data,
-        "test_time": current
-    }
-    wave = Waves(**wave_info)
-    print(wave_info)
-    db.session.add(wave)
-    db.session.flush()
-
-    # 查找课程对应的所有脑电数据, 修改脑电数据
-    course_waves = course.waves.all()
-    print(course_waves)
-    totle_data = 0
-    for wave in course_waves:
-        data = wave.data
-        if data is None:
-            data = 0
-        totle_data += data
-
-    course_avg_data = totle_data / len(course_waves)
-    course.avg_data = round(course_avg_data, 2)
-
-    try:
-        db.session.commit()
-    except Exception as e:
-        msg = "存储用户<%s> 的 <%s>课程 的脑电数据%s失败, error:%s" % (nickName, course_id, data, str(e))
-        current_app.logger.error(msg)
-        return utils.make_resp(msg=json.dumps(msg), status=500)
-    wave_info["msg"] = "存储脑电数据成功"
-    return jsonify(wave_info)
-
-
+# 存储脑电数据--original
 @addData.route("/save_waves/", methods=["POST"])
 def save_waves():
     """存储脑电数据接口，post请求中携带的data为：
@@ -201,11 +130,85 @@ def save_waves():
     url: http://www.xiaochengxueeg.xyz:8888/save_waves
     :return 所增加脑电数据的详细信息
     """
-    nickName = request.values.get("nickName")
+    username = request.values.get("username")
     course_id = request.values.get("course_id")
     data = request.values.get("data")
 
-    # 获取课程信息
+    try:
+        # 根据nickName和username定位学生
+        user = db.session.query(Users).filter_by(username=username).first()
+        course = db.session.query(Courses).filter_by(id=course_id).first()
+    except Exception as e:
+        msg = "获取用户%s / 课程%s 信息失败，error:%s" % (username, course_id, str(e))
+        current_app.logger.info(msg)
+        return utils.make_resp(msg=json.dumps(msg), status=500)
+
+    if not user:
+        msg = "%s用户不存在, 无法添加脑电数据，请核对" % username
+        current_app.logger.error(msg)
+        return utils.make_resp(msg=json.dumps(msg), status=201)
+    if not course:
+        msg = "%s课程不存在, 无法添加脑电数据，请核对" % course_id
+        current_app.logger.error(msg)
+        return utils.make_resp(msg=json.dumps(msg), status=201)
+
+    current = datetime.datetime.now().strftime("%Y-%m-%d %H:%M:%S")
+    wave_info = {
+        "nickName": user.nickName,
+        "username": username,
+        "user_id": user.id,
+        "course_id": course_id,
+        "course_name": course.name,
+        "course_category": course.category,
+        "course_avg_data": course.avg_data,
+        "wave_data": data,
+        "test_time": current
+    }
+
+    wave = Waves(**wave_info)
+    print(wave_info)
+    db.session.add(wave)
+    db.session.flush()
+
+    # 查找课程对应的所有脑电数据, 修改脑电数据
+    course_waves = course.waves.all()
+
+    totle_data = 0
+    for wave in course_waves:
+        data = wave.data
+        if data is None:
+            data = 0
+        try:
+            totle_data += float(data)
+        except Exception as e:
+            msg = "统计脑电数据%s失败, error:%s" % (data, str(e))
+            current_app.logger.error(msg)
+            return utils.make_resp(msg=json.dumps(msg), status=500)
+
+    course_avg_data = totle_data / len(course_waves)
+    course.avg_data = round(course_avg_data, 2)
+    try:
+        db.session.commit()
+    except Exception as e:
+        msg = "存储用户<%s> 的 <%s>课程 的脑电数据%s失败, error:%s" % (username, course_id, data, str(e))
+        current_app.logger.error(msg)
+        return utils.make_resp(msg=json.dumps(msg), status=500)
+    wave_info["msg"] = "存储脑电数据成功"
+    return jsonify(wave_info)
+
+
+# 微信存储脑电数据-new
+@addData.route("/save_waves_by_wx/", methods=["POST"])
+def save_waves_by_wx():
+    """存储脑电数据接口，post请求中携带的data为：
+    nickName:微信名用户名。代表学生
+    course_id：脑电数据的课程名
+    url: http://www.xiaochengxueeg.xyz:8888/save_waves
+    :return 所增加脑电数据的详细信息
+    """
+    nickName = request.values.get("nickName")
+    course_id = request.values.get("course_id")
+
     try:
         # 根据nickName和username定位学生
         user = db.session.query(Users).filter_by(nickName=nickName).first()
@@ -223,8 +226,8 @@ def save_waves():
         msg = "%s课程不存在, 无法添加脑电数据，请核对" % course_id
         current_app.logger.error(msg)
         return utils.make_resp(msg=json.dumps(msg), status=201)
-    current = datetime.datetime.now().strftime("%Y-%m-%d %H:%M:%S")
 
+    # 定位学生和课程
     wave_info = {
         "nickName": nickName,
         "username": user.username,
@@ -232,23 +235,95 @@ def save_waves():
         "course_id": course_id,
         "course_name": course.name,
         "course_category": course.category,
-        "wave_data": data,
-        "test_time": current
+        "course_avg_data": course.avg_data,
     }
+
     wave = Waves(**wave_info)
-    print(wave_info)
     db.session.add(wave)
-    db.session.flush()
+    # db.session.flush()
 
     # 查找课程对应的所有脑电数据, 修改脑电数据
+    # course_waves = course.waves.all()
+
+    # totle_data = 0
+    # for wave in course_waves:
+    #     data = wave.data
+    #     if data is None:
+    #         data = 0
+    #     try:
+    #         totle_data += float(data)
+    #     except Exception as e:
+    #         msg = "统计脑电数据%s失败, error:%s" % (data, str(e))
+    #         current_app.logger.error(msg)
+    #         return utils.make_resp(msg=json.dumps(msg), status=500)
+    #
+    # course_avg_data = totle_data / len(course_waves)
+    # course.avg_data = round(course_avg_data, 2)
+    try:
+        db.session.commit()
+    except Exception as e:
+        msg = "存储用户<%s> 的 <%s>课程 的脑电数据失败, error:%s" % (nickName, course_id, str(e))
+        current_app.logger.error(msg)
+        return utils.make_resp(msg=json.dumps(msg), status=500)
+    wave_info["msg"] = "操作成功，等待上传脑电数据。。。"
+    return jsonify(wave_info)
+
+
+# APP存储脑电数据-new
+@addData.route("/save_waves_by_app/", methods=["POST"])
+def save_waves_by_app():
+    """存储脑电数据接口，post请求中携带的data为：
+    username:app用户名。代表学生
+    data：脑电数据
+    url: http://www.xiaochengxueeg.xyz:8888/save_waves
+    :return 所增加脑电数据的详细信息
+    """
+    username = request.values.get("username")
+    data = request.values.get("data")
+
+    try:
+        # 根据nickName和username定位学生
+        user = db.session.query(Users).filter_by(username=username).first()
+    except Exception as e:
+        msg = "获取用户%s 信息失败，error:%s" % (username, str(e))
+        current_app.logger.info(msg)
+        return utils.make_resp(msg=json.dumps(msg), status=500)
+
+    if not user:
+        msg = "%s用户不存在, 无法添加脑电数据，请核对" % username
+        current_app.logger.error(msg)
+        return utils.make_resp(msg=json.dumps(msg), status=201)
+
+    # 查找需要添加data的wave记录
+    wave = Waves.query.filter(Waves.user_id == user.id, Waves.course_id != None, Waves.data == None).first()
+
+    if not wave:
+        msg = "需要添加脑电数据<%s, %s> 的记录不存在, 请核对" % (username, data)
+        current_app.logger.error(msg)
+        return utils.make_resp(msg=json.dumps(msg), status=201)
+
+    current = datetime.datetime.now().strftime("%Y-%m-%d %H:%M:%S")
+    wave.test_time = current,
+    wave.wave_data = data,
+
+    db.session.flush()
+
+    course = Courses.query.filter_by(id=wave.course_id).first()
+    # 查找课程对应的所有脑电数据, 修改脑电数据
     course_waves = course.waves.all()
-    print(course_waves)
+
     totle_data = 0
     for wave in course_waves:
         data = wave.data
+
         if data is None:
             data = 0
-        totle_data += data
+        try:
+            totle_data += float(data)
+        except Exception as e:
+            msg = "统计脑电数据%s失败, error:%s" % (data, str(e))
+            current_app.logger.error(msg)
+            return utils.make_resp(msg=json.dumps(msg), status=500)
 
     course_avg_data = totle_data / len(course_waves)
     course.avg_data = round(course_avg_data, 2)
@@ -256,8 +331,7 @@ def save_waves():
     try:
         db.session.commit()
     except Exception as e:
-        msg = "存储用户<%s> 的 <%s>课程 的脑电数据%s失败, error:%s" % (nickName, course_id, data, str(e))
+        msg = "存储用户<%s> 的脑电数据失败, error:%s" % (username, str(e))
         current_app.logger.error(msg)
         return utils.make_resp(msg=json.dumps(msg), status=500)
-    wave_info["msg"] = "存储脑电数据成功"
-    return jsonify(wave_info)
+    return jsonify("success")

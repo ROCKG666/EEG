@@ -18,7 +18,7 @@ class Users(UserMixin, db.Model):
     nickName = db.Column(db.String(50))
     username = db.Column(db.String(50))
     password = db.Column(db.String(50))
-    photo = db.Column(db.String(100)) # 暂时保留photo字段
+    photo = db.Column(db.String(500)) # 暂时保留photo字段
 
     comments = db.relationship("Comments", backref='user', lazy='dynamic')
     waves = db.relationship("Waves", backref='user', lazy='dynamic')
@@ -94,8 +94,8 @@ class Schools (db.Model):
         self.photo = kwargs.get("photo")
         self.intro = kwargs.get("intro")
 
-    def __repr__(self):
-        return self.name
+    # def __repr__(self):
+    #     return self.name
 
 
 class Teachers(db.Model):
@@ -161,6 +161,8 @@ class Comments(db.Model):
         self.content = kwargs.get("content")
         self.comment_time = kwargs.get("comment_time")
 
+    def __repr__(self):
+        return str(self.id)
 
 class Waves(db.Model):
     __tablename__ = "waves"
@@ -178,7 +180,9 @@ class Waves(db.Model):
         self.test_time = kwargs.get("test_time")
 
     def __repr__(self):
-        return self.data
+        # return self.data
+        # __str__ returned non - string (type float)
+        return str(self.data)
 
 # db.drop_all()
 #########################################

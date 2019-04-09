@@ -1,4 +1,4 @@
-from cronlog import unicode
+#from cronlog import unicode
 from flask_admin import Admin
 from flask_admin.contrib.sqla import ModelView
 from flask_wtf import FlaskForm
@@ -16,7 +16,7 @@ class UsersForm(FlaskForm):
     # user_type = SelectField(label='用户类型',
     #                         validators=[DataRequired('请选择标签')],
     #                         choices=[('students', '学生'), ('teachers', '老师'), ('schools', '机构')],
-    #                         coerce=unicode # 解决表单的Not a valid choice
+    #                         coerce=str # 解决表单的Not a valid choice
     #                         )
     #
 

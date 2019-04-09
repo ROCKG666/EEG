@@ -66,7 +66,7 @@ def wx_register():
             "id": user.id,
             "nickName": user.nickName,
             "username": user.username,
-            "photo": user.photo
+            "photo": user.photo,
         }
         current_app.logger.error(msg)
         return utils.make_resp(json.dumps(user_info), status=201)
@@ -74,7 +74,7 @@ def wx_register():
     # 生成用户信息-->字典格式
     user_info = {
         "nickName": nickName,
-        "photo": photo
+        "photo": photo,
     }
     user = Users(**user_info)
     db.session.add(user)
@@ -96,7 +96,6 @@ def wx_register():
 def login():
     if request.method == "GET":
         return render_template("login.html")
-
     username = request.values.get("username")
     password = request.values.get("password")
     user = Users.query.filter_by(username=username).first()
@@ -106,7 +105,8 @@ def login():
         login_user(user)
         msg = "用户%s 登陆成功" % username
         current_app.logger.info(msg)
-        return jsonify(msg)
+        # return jsonify(msg)
+        return jsonify("success")
     else:
         msg = "用户名或密码错误, %s" % username
         current_app.logger.info(msg)
