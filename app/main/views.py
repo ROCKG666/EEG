@@ -92,8 +92,9 @@ def wx_register():
         return resp
 
 
-@main.route('/login/', methods=['GET', 'POST'])
-def login():
+# 微信登陆接口-第二次登陆
+@main.route('/wx_login/', methods=['GET', 'POST'])
+def we_login():
     if request.method == "GET":
         return render_template("login.html")
 
@@ -151,6 +152,32 @@ def login():
         current_app.logger.error(msg)
         user_info['msg'] = "用户名或密码错误"
         return utils.make_resp(json.dumps(user_info), status=201)
+
+
+# 测试用户是否已经报名某课程
+@main.route('/login_test/', methods=['GET', 'POST'])
+def login_test():
+    if request.method == "GET":
+        return render_template("login.html")
+
+    phone_num = request.values.get("phone_num")
+    password = request.values.get("password")
+
+    # 查询用户是否已经报名某课程
+    course_entry = CoursesEntry.query.filter_by(phone_num=phone_num, password=password).first()
+    if course_entry:
+        current_app.logger.info("电话号已报名某课程, <%s>" % phone_num)
+
+        user_info = dict()
+        user_info['phone_num'] = phone_num
+        user_info['password'] = password
+        user_info['msg'] = "success"
+        return jsonify(user_info)
+
+    else:
+        msg = "电话号或密码错误, <%s>" % phone_num
+        current_app.logger.error(msg)
+        return utils.make_resp(json.dumps(msg), status=201)
 
 
 @login_manager.user_loader
