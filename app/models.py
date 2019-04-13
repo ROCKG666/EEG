@@ -184,7 +184,4 @@ class Waves(db.Model):
         # __str__ returned non - string (type float)
         return str(self.data)
 
-# db.drop_all()
-#########################################
-
 
