@@ -240,25 +240,7 @@ def save_waves_by_wx():
 
     wave = Waves(**wave_info)
     db.session.add(wave)
-    # db.session.flush()
 
-    # 查找课程对应的所有脑电数据, 修改脑电数据
-    # course_waves = course.waves.all()
-
-    # totle_data = 0
-    # for wave in course_waves:
-    #     data = wave.data
-    #     if data is None:
-    #         data = 0
-    #     try:
-    #         totle_data += float(data)
-    #     except Exception as e:
-    #         msg = "统计脑电数据%s失败, error:%s" % (data, str(e))
-    #         current_app.logger.error(msg)
-    #         return utils.make_resp(msg=json.dumps(msg), status=500)
-    #
-    # course_avg_data = totle_data / len(course_waves)
-    # course.avg_data = round(course_avg_data, 2)
     try:
         db.session.commit()
     except Exception as e:
@@ -318,6 +300,9 @@ def save_waves_by_app():
 
         if data is None:
             data = 0
+        # 遍历查询结果集的最后一个值为元组，原因不详
+        elif isinstance(data, tuple):
+            data = data[0]
         try:
             totle_data += float(data)
         except Exception as e:
