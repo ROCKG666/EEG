@@ -8,7 +8,7 @@ from app.models import *
 from .. import utils
 from flask import current_app
 
-
+# 注册接口已废弃
 # 注册app用户
 @main.route('/app_register/', methods=["POST"])
 def app_register():
@@ -96,21 +96,61 @@ def wx_register():
 def login():
     if request.method == "GET":
         return render_template("login.html")
-    username = request.values.get("username")
+
+    nickName = request.values.get("nickName")
+    phone_num = request.values.get("phone_num")
     password = request.values.get("password")
-    user = Users.query.filter_by(username=username).first()
+    photo = request.values.get("avatarUrl")
+
+    user_info = {
+        "nickName": nickName,
+        "phone_num": phone_num,
+        "password": password,
+        "photo": photo,
+    }
+
+    # 校验photo不为空
+    if not photo:
+        msg = "<%s, %s>头像URL为空, 请核查" %(nickName, phone_num)
+        current_app.logger.error(msg)
+        user_info['msg'] = "avatarUrl is None"
+        return utils.make_resp(json.dumps(user_info), status=201)
+
+    # 查询用户是否已经报名某课程
+    course_entry = CoursesEntry.query.filter_by(phone_num=phone_num).first()
+
+    if not course_entry:
+        msg = "用户<%s | %s> 未报名课程" % (nickName, phone_num)
+        current_app.logger.error(msg)
+        user_info['msg'] = "Can't login, You Have Not Signed Up A Course"
+        return utils.make_resp(json.dumps(user_info), status=201)
     # 如果用户不为空并且密码正确
-    if user is not None and user.password == password:
-        # 登陆用户
-        login_user(user)
-        msg = "用户%s 登陆成功" % username
-        current_app.logger.info(msg)
-        # return jsonify(msg)
-        return jsonify("success")
+    elif course_entry and course_entry.password == password:
+        # 查询用户是否已经登陆过
+        user = Users.query.filter_by(phone_num=phone_num).first()
+        # 创建user, 存入数据库
+        if not user:
+            user = Users(**user_info)
+            db.session.add(user)
+            try:
+                db.session.commit()
+            except Exception as e:
+                msg = "存入数据库失败，userinfo is %s err:%s" % (user_info,  str(e))
+                current_app.logger.error(msg)
+                return utils.make_resp(json.dumps(msg), status=500)
+
+            else:
+                # 登陆用户
+                login_user(course_entry)
+                msg = "用户登陆成功，userinfo: %s" % user_info
+                current_app.logger.info(msg)
+        user_info['msg'] = "success"
+        return jsonify(user_info)
     else:
-        msg = "用户名或密码错误, %s" % username
-        current_app.logger.info(msg)
-        return utils.make_resp(json.dumps(msg), status=201)
+        msg = "用户名或密码错误, <%s | %s>" % (nickName, phone_num)
+        current_app.logger.error(msg)
+        user_info['msg'] = "用户名或密码错误"
+        return utils.make_resp(json.dumps(user_info), status=201)
 
 
 @login_manager.user_loader
@@ -119,3 +159,40 @@ def load_user(userid):
     print("load_user", userid)
     user = Users.query.filter_by(id=userid).first()
     return user
+
+
+# test API
+@main.route("/new_register/", methods=["POST"])
+def new_register():
+    """接收post请求， 请求的数据为'nickName'
+    url为 http://39.108.166.132:8888/wx_register
+    注册成功返回用户信息，响应码为200
+    注册失败返回失败的消息信息，响应码为201或500
+    """
+    print('前端的数据：', request.values)
+    # 获取前端传递的数据,全部封装在request之中
+    nickName = request.values.get("nickName")
+    user = db.session.query(Users).filter_by(nickName=nickName).first()
+    print("*******", user)
+    if user:
+        # 如果微信用户已存在，查询并返回此用户的信息， 响应码为201
+        msg = "微信用户%s 存在" % nickName
+        user_info = {
+            "msg": msg,
+            "nickName": nickName,
+            "username": user.username,
+        }
+        current_app.logger.error(msg)
+        return jsonify(user_info)
+    # 如果用户不存在，继续获取信息并存储
+    # 生成用户信息-->字典格式
+    else:
+        msg = "微信用户%s 不存在" % nickName
+        user_info = {
+            "msg": msg,
+            "nickName": None,
+            "username": None,
+        }
+        current_app.logger.error(msg)
+        return jsonify(user_info)
+

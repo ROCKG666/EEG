@@ -10,9 +10,10 @@ from .models import *
 class UsersForm(FlaskForm):
     # Flask-Admin是不提供主键修改的表单的, 可以自定义需要修改的字段
     # id = IntegerField()
-    nickName = StringField(label='微信用户名')
-    username = StringField(label='app用户名')
-    password = StringField(label='app用户密码')
+    nickName = StringField(label='微信名')
+    phone_num = StringField(label='电话号')
+    password = StringField(label='报名密码')
+    photo = StringField(label='头像')
     # user_type = SelectField(label='用户类型',
     #                         validators=[DataRequired('请选择标签')],
     #                         choices=[('students', '学生'), ('teachers', '老师'), ('schools', '机构')],
@@ -36,3 +37,4 @@ admin.add_view(ModelView(Teachers, db.session, name="老师管理"))
 admin.add_view(ModelView(Courses, db.session, name="课程管理"))
 admin.add_view(ModelView(Comments, db.session, name="评论管理"))
 admin.add_view(ModelView(Waves, db.session, name="脑电数据"))
+admin.add_view(ModelView(CoursesEntry, db.session, name="报名课程"))

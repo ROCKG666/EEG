@@ -34,8 +34,8 @@ def create_app():
     app.app_context().push()
     utils.set_log(app)
     # 必须要推送应用上下文后才能操作db
-    # db.drop_all()
-    # db.create_all()
+    db.drop_all()
+    db.create_all()
     admin.init_app(app)
 
     # app关联蓝图程序

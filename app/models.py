@@ -16,7 +16,7 @@ class Users(UserMixin, db.Model):
     __tablename__ = 'users'
     id = db.Column(db.Integer, primary_key=True, autoincrement=True)
     nickName = db.Column(db.String(50))
-    username = db.Column(db.String(50))
+    phone_num = db.Column(db.String(50))
     password = db.Column(db.String(50))
     photo = db.Column(db.String(500)) # 暂时保留photo字段
 
@@ -37,7 +37,7 @@ class Users(UserMixin, db.Model):
 
     def __init__(self, **kwargs):
         self.nickName = kwargs.get("nickName")
-        self.username = kwargs.get("username")
+        self.phone_num = kwargs.get("phone_num")
         self.password = kwargs.get("password")
         self.photo = kwargs.get("photo")
 
@@ -45,28 +45,12 @@ class Users(UserMixin, db.Model):
         user_info = {
             "id": self.id,
             "nickName": self.nickName,
-            "username": self.username,
+            "phone_num": self.phone_num,
         }
         return user_info
 
     def __repr__(self):
         return self.nickName
-
-    # 可以重写UserMixin 的四个方法
-
-    # 密码加密：
-    # @property
-    # def password(self):
-    #     return self._password
-    #     # raise AttributeError(u'文明密码不可读')
-
-    # @password.setter
-    # def password(self, rawpwd):
-    #     self._password = generate_password_hash(rawpwd)
-
-    # # 定义一个验证密码的方法
-    # def check_password(self, rawpwd):
-    #     return check_password_hash(self.password, rawpwd)
 
 
 class Schools (db.Model):
@@ -86,6 +70,7 @@ class Schools (db.Model):
                                lazy="dynamic",
                                cascade='all, delete-orphan',
                                passive_deletes=True)
+    course_entry = db.relationship("CoursesEntry", backref="school", lazy="dynamic")
 
     def __init__(self, **kwargs):
         self.name = kwargs.get("name")
@@ -94,8 +79,8 @@ class Schools (db.Model):
         self.photo = kwargs.get("photo")
         self.intro = kwargs.get("intro")
 
-    # def __repr__(self):
-    #     return self.name
+    def __repr__(self):
+        return self.name
 
 
 class Teachers(db.Model):
@@ -106,6 +91,7 @@ class Teachers(db.Model):
     intro = db.Column(db.String(300))
     # 一名老师对应一门课程， 反向引用到Courses类，并增加course属性，代表这个老师的所有课程
     course = db.relationship("Courses", backref="teacher", uselist=False)
+    course_entry = db.relationship("CoursesEntry", backref="teacher", lazy="dynamic")
 
     # 学校和老师一对多，Teachers对象具有隐式属性school, 代表这个老师的学校
     # 设置级联删除，删除schools表中的数据时，teachers表中引用schools表的数据也自动删除
@@ -134,6 +120,7 @@ class Courses(db.Model):
 
     comments = db.relationship("Comments", backref='course', lazy='dynamic')
     waves = db.relationship("Waves", backref='course', lazy='dynamic')
+    course_entry = db.relationship("CoursesEntry", backref="course", lazy="dynamic")
 
     def __init__(self, **kwargs):
         self.name = kwargs.get("name")
@@ -162,7 +149,8 @@ class Comments(db.Model):
         self.comment_time = kwargs.get("comment_time")
 
     def __repr__(self):
-        return str(self.id)
+        return self.content
+
 
 class Waves(db.Model):
     __tablename__ = "waves"
@@ -184,4 +172,19 @@ class Waves(db.Model):
         # __str__ returned non - string (type float)
         return str(self.data)
 
+
+class CoursesEntry(db.Model):
+    __tablename__ = "courses_entry"
+    id = db.Column(db.Integer, primary_key=True, autoincrement=True)
+
+    username = db.Column(db.String(50))
+    phone_num = db.Column(db.String(50))
+    password = db.Column(db.String(50))
+
+    school_id = db.Column(db.Integer, db.ForeignKey("schools.id"))
+    teacher_id = db.Column(db.Integer, db.ForeignKey("teachers.id"))
+    course_id = db.Column(db.Integer, db.ForeignKey("courses.id"))
+
+    def __repr__(self):
+        return str(self.phone_num)
 
