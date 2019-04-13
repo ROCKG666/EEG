@@ -275,7 +275,7 @@ def get_user_info():
     user_info = {
         "nickName": nickName,
         "user_type": user_type,
-        "username": user.username,
+        "phone_num": user.phone_num,
         "intro": user.intro,
         'photo': user.photo
     }
